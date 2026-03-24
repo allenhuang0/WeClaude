@@ -27,54 +27,20 @@
 
 你是否想过：**通勤路上用手机让 Claude Code 帮你改 bug？**
 
-OpenClaw 太重了 — 你只需要一个轻量桥接器。WeClaude 用 **~2000 行 Python**，直接把微信 ClawBot 和 Claude Code CLI 连在一起。
+WeClaude 用 **~2000 行 Python**，直接把微信 ClawBot 和 Claude Code CLI 连在一起。轻量、安全、开箱即用。
 
-```
-                    ┌─────────────────────┐
-                    │   你的 iPhone/Android  │
-                    │   微信 ClawBot 聊天     │
-                    └──────────┬──────────┘
-                               │ 文字 / 语音 / 图片
-                               ▼
-                    ┌─────────────────────┐
-                    │  iLink API (腾讯官方)  │
-                    │  HTTPS 长轮询          │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-  ┌───────────────────────────────────────────────────────┐
-  │                    WeClaude                            │
-  │  ┌─────────┐ ┌──────────┐ ┌──────────┐ ┌───────────┐ │
-  │  │ Memory  │ │Scheduler │ │ Persona  │ │Multi-Agent│ │
-  │  └─────────┘ └──────────┘ └──────────┘ └───────────┘ │
-  └───────────────────────┬───────────────────────────────┘
-                          │ stdin / --resume
-                          ▼
-              ┌───────────────────────┐
-              │  Claude Code CLI      │
-              │  (或 Codex / Gemini)   │
-              └───────────────────────┘
-                          │
-                          ▼
-                 你的代码仓库 / 项目文件
-```
+<p align="center">
+  <img src="assets/flow.png" alt="WeClaude 架构流程" width="700">
+</p>
 
-### vs 其他方案
+### 亮点
 
-| 特性 | WeClaude | WeClaw | 官方 OpenClaw | Nexu |
-|------|:--------:|:------:|:------------:|:----:|
-| 无需 OpenClaw | **Yes** | Yes | No | No |
-| Claude Code 原生集成 | **Yes** | 插件 | 插件 | 插件 |
-| 语音输入 | **Yes** | Yes | Yes | Yes |
-| 图片理解 | **Yes** | Yes | Yes | Yes |
-| 持久记忆 | **Yes** | No | Yes | No |
-| 定时任务 | **Yes** | No | Yes | No |
-| 人设系统 | **Yes** | No | No | No |
-| Session 管理 | **Yes** | No | No | No |
-| 多 Agent 切换 | **Yes** | Yes | N/A | Yes |
-| 零遥测 | **Yes** | Yes | No | No |
-| 代码行数 | ~2000 | ~5000 | 200K+ | 50K+ |
-| 依赖数 | 3 | 7 | 100+ | 200+ |
+- **全媒体输入** — 文字、语音、图片，发给 ClawBot 就能用
+- **持久记忆** — Claude 记得你之前说过的话
+- **定时任务** — 提醒、巡检、自动汇报
+- **Session 管理** — 手机上切换电脑里的编程会话
+- **多 Agent** — Claude Code / Codex / Gemini / Aider 一键切换
+- **零遥测** — 所有数据留在你本地，~2000 行代码完全可审计
 
 ---
 
