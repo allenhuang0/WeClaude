@@ -1,0 +1,27 @@
+__pycache__/
+*.pyc
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Local config (contains tokens)
+token.json
+sessions.json
+persona.json
+jobs.json
+cursor.dat
+qr.png
+
+# Media downloads
+media/
+
+# Memory (user-specific)
+memory/
+
+# Logs
+*.log
+
+# Environment
+.env
+.venv/

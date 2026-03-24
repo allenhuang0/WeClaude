@@ -1,0 +1,377 @@
+<p align="center">
+  <h1 align="center">WeClaude</h1>
+  <p align="center">
+    <strong>微信 ClawBot 直连 Claude Code，无需 OpenClaw</strong>
+  </p>
+  <p align="center">
+    用微信操控你电脑上的 Claude Code — 随时随地，掌上编程
+  </p>
+  <p align="center">
+    <a href="#quick-start">快速开始</a> |
+    <a href="#features">功能特性</a> |
+    <a href="#commands">命令参考</a> |
+    <a href="#architecture">架构设计</a>
+  </p>
+  <p align="center">
+    <img src="https://img.shields.io/badge/python-3.11+-blue?logo=python&logoColor=white" alt="Python">
+    <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
+    <img src="https://img.shields.io/badge/dependencies-3-brightgreen" alt="Deps">
+    <img src="https://img.shields.io/badge/telemetry-zero-critical" alt="No Telemetry">
+    <img src="https://img.shields.io/badge/lines-~2000-informational" alt="LOC">
+  </p>
+</p>
+
+---
+
+## Why WeClaude?
+
+你是否想过：**通勤路上用手机让 Claude Code 帮你改 bug？**
+
+OpenClaw 太重了 — 你只需要一个轻量桥接器。WeClaude 用 **~2000 行 Python**，直接把微信 ClawBot 和 Claude Code CLI 连在一起。
+
+```
+                    ┌─────────────────────┐
+                    │   你的 iPhone/Android  │
+                    │   微信 ClawBot 聊天     │
+                    └──────────┬──────────┘
+                               │ 文字 / 语音 / 图片
+                               ▼
+                    ┌─────────────────────┐
+                    │  iLink API (腾讯官方)  │
+                    │  HTTPS 长轮询          │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+  ┌───────────────────────────────────────────────────────┐
+  │                    WeClaude                            │
+  │  ┌─────────┐ ┌──────────┐ ┌──────────┐ ┌───────────┐ │
+  │  │ Memory  │ │Scheduler │ │ Persona  │ │Multi-Agent│ │
+  │  └─────────┘ └──────────┘ └──────────┘ └───────────┘ │
+  └───────────────────────┬───────────────────────────────┘
+                          │ stdin / --resume
+                          ▼
+              ┌───────────────────────┐
+              │  Claude Code CLI      │
+              │  (或 Codex / Gemini)   │
+              └───────────────────────┘
+                          │
+                          ▼
+                 你的代码仓库 / 项目文件
+```
+
+### vs 其他方案
+
+| 特性 | WeClaude | WeClaw | 官方 OpenClaw | Nexu |
+|------|:--------:|:------:|:------------:|:----:|
+| 无需 OpenClaw | **Yes** | Yes | No | No |
+| Claude Code 原生集成 | **Yes** | 插件 | 插件 | 插件 |
+| 语音输入 | **Yes** | Yes | Yes | Yes |
+| 图片理解 | **Yes** | Yes | Yes | Yes |
+| 持久记忆 | **Yes** | No | Yes | No |
+| 定时任务 | **Yes** | No | Yes | No |
+| 人设系统 | **Yes** | No | No | No |
+| Session 管理 | **Yes** | No | No | No |
+| 多 Agent 切换 | **Yes** | Yes | N/A | Yes |
+| 零遥测 | **Yes** | Yes | No | No |
+| 代码行数 | ~2000 | ~5000 | 200K+ | 50K+ |
+| 依赖数 | 3 | 7 | 100+ | 200+ |
+
+---
+
+<a id="features"></a>
+
+## Features
+
+### 1. 文字 / 语音 / 图片 — 全媒体输入
+
+```
+文字消息 ──→ 直接发送给 Claude Code
+语音消息 ──→ 微信自动转文字 → 发送给 Claude Code
+图片消息 ──→ CDN 下载 + AES-128 解密 → Claude Code 读图理解
+文件附件 ──→ 下载保存 → 告知 Claude Code 文件路径
+```
+
+发一张代码截图，Claude 就能帮你分析和修改。发一段语音描述 bug，Claude 就开始修。
+
+### 2. 持久记忆系统 (OpenClaw-inspired)
+
+```
+/remember 项目用 React + TypeScript
+/remember 数据库密码在 .env 里
+/memory                              ← 查看所有记忆
+/search TypeScript                   ← 搜索记忆和近3天对话
+```
+
+记忆存储为 Markdown 文件，**每次对话自动注入**给 Claude 作为上下文。再也不用重复说明项目背景。
+
+### 3. 定时任务 (OpenClaw-inspired)
+
+```
+/remind 17:00 提交代码           ← 下午5点提醒
+/remind in 30m 检查部署           ← 30分钟后提醒
+/every 2h !检查服务器状态         ← 每2小时让 Claude 检查并汇报
+/cron 0 9 * * 1-5 早报           ← 工作日早上9点
+/jobs                             ← 查看所有任务
+```
+
+`!` 前缀的消息会经过 Claude Code 处理后再发给你 — 真正的**自动化巡检**。
+
+### 4. Session 管理 — 掌控电脑上的所有会话
+
+```
+/sessions                          ← 列出电脑上所有 Claude Code sessions
+/use 3                             ← 切换到第3个 session
+/new                               ← 开始全新会话
+/workdir ~/projects/my-app         ← 运行时切换工作目录
+```
+
+通勤时继续之前在办公室开始的编程会话。
+
+### 5. 多 Agent 支持
+
+```
+/agent                             ← 查看可用 agent
+/agent claude                      ← Claude Code (默认)
+/agent codex                       ← OpenAI Codex CLI
+/agent gemini                      ← Google Gemini CLI
+/agent aider                       ← Aider
+```
+
+一键切换 AI 引擎，对比不同 agent 的效果。
+
+### 6. 人设系统
+
+```
+/persona 你是一个资深全栈工程师，偏好 TypeScript
+/persona 你是 IC 设计专家，熟悉 Cadence 工具链
+```
+
+为每个用户设置独立的 Claude 行为风格，持久化保存。
+
+---
+
+<a id="quick-start"></a>
+
+## Quick Start
+
+### 前置条件
+
+- Python 3.11+
+- 微信 8.0.70+（已启用 ClawBot 插件）
+- Claude Code CLI（`npm install -g @anthropic-ai/claude-code`）
+
+### 安装
+
+```bash
+git clone https://github.com/allenhuang0/WeClaude.git
+cd WeClaude
+pip install -r requirements.txt
+```
+
+### 首次运行
+
+```bash
+python bridge.py
+```
+
+终端会显示二维码 — 用微信扫码即可。登录后自动开始监听消息。
+
+### 后续运行
+
+```bash
+python bridge.py                    # 自动恢复登录
+python bridge.py -w ~/my-project    # 指定 Claude Code 工作目录
+python bridge.py --login            # 重新扫码登录
+python bridge.py --logout           # 清除登录凭据
+```
+
+---
+
+<a id="commands"></a>
+
+## Commands
+
+<details>
+<summary><strong>完整命令参考（点击展开）</strong></summary>
+
+### Session
+
+| 命令 | 功能 |
+|------|------|
+| `/sessions` | 列出电脑上 Claude Code sessions |
+| `/use <n>` | 切换到第 n 个 session |
+| `/new` | 开始新会话 |
+| `/reset` | 清除当前 session |
+| `/workdir <path>` | 运行时切换工作目录 |
+
+### Agent
+
+| 命令 | 功能 |
+|------|------|
+| `/agent` | 列出可用 agent |
+| `/agent <name>` | 切换 agent（claude/codex/gemini/aider）|
+
+### Memory
+
+| 命令 | 功能 |
+|------|------|
+| `/remember <text>` | 保存长期记忆 |
+| `/forget <keyword>` | 删除匹配的记忆 |
+| `/memory` | 查看所有记忆 |
+| `/search <query>` | 搜索记忆和近期对话 |
+| `/log` | 查看今天的对话日志 |
+
+### Persona
+
+| 命令 | 功能 |
+|------|------|
+| `/persona` | 查看当前人设 |
+| `/persona <desc>` | 设置人设 |
+
+### Schedule
+
+| 命令 | 功能 |
+|------|------|
+| `/remind <time> <msg>` | 设置提醒（`17:00`, `in 30m`）|
+| `/every <interval> <msg>` | 间隔重复（`30m`, `2h`, `1d`）|
+| `/cron <expr> <msg>` | cron 表达式 |
+| `/jobs` | 查看所有任务 |
+| `/cancel <id>` | 取消任务 |
+
+### Other
+
+| 命令 | 功能 |
+|------|------|
+| `/status` | 查看 bridge 状态 |
+| `/help` | 显示帮助 |
+
+</details>
+
+---
+
+<a id="architecture"></a>
+
+## Architecture
+
+```
+WeClaude/
+  bridge.py          # 主桥接器：消息路由、Agent 调用、命令分发
+  ilink_client.py    # iLink Bot API 客户端：登录、轮询、发送
+  memory_store.py    # 持久记忆系统（Markdown 文件存储）
+  scheduler.py       # 定时任务调度器（cron/interval/reminder）
+  requirements.txt   # 仅 3 个依赖：httpx, qrcode, cryptography
+```
+
+### 数据存储
+
+所有数据存储在本地 `~/.config/wechat-claude-bridge/`，无云端同步：
+
+| 文件 | 用途 | 权限 |
+|------|------|------|
+| `token.json` | 微信登录凭据 | 0600 |
+| `sessions.json` | Claude session 映射 | 0600 |
+| `persona.json` | 人设配置 | 0600 |
+| `jobs.json` | 定时任务 | 0600 |
+| `cursor.dat` | 消息同步游标 | 0600 |
+| `memory/MEMORY.md` | 长期记忆 | - |
+| `memory/YYYY-MM-DD.md` | 每日对话日志 | - |
+
+### 安全设计
+
+- HTTPS 全链路加密（iLink 官方 API）
+- BaseURL 白名单验证（仅 `*.weixin.qq.com`）
+- 文件路径遍历防护
+- 线程池并发控制（最大 8 workers）
+- 内部错误不暴露给微信用户
+- **零遥测、零数据收集、零第三方请求**
+
+---
+
+## Auto-Start (macOS)
+
+<details>
+<summary>设置开机自启（点击展开）</summary>
+
+```bash
+cat > ~/Library/LaunchAgents/com.weclaude.bridge.plist << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.weclaude.bridge</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>python3</string>
+        <string>/path/to/WeClaude/bridge.py</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/path/to/WeClaude</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+</plist>
+EOF
+
+# 修改上面的路径后加载
+launchctl load ~/Library/LaunchAgents/com.weclaude.bridge.plist
+```
+
+</details>
+
+---
+
+## FAQ
+
+<details>
+<summary><strong>Q: 和 OpenClaw 有什么区别？</strong></summary>
+
+OpenClaw 是完整的 AI 助手平台（200K+ 行代码），WeClaude 只做一件事：把微信消息转发给 Claude Code。更轻量、更专注、更易审计。
+</details>
+
+<details>
+<summary><strong>Q: Session 显示 "Ended" 是 bug 吗？</strong></summary>
+
+不是。`claude -p` 模式每次调用后进程退出，session 标记为 Ended。但通过 `--resume`，对话上下文完整保留。WeClaude 自动管理这个过程。
+</details>
+
+<details>
+<summary><strong>Q: 支持群聊吗？</strong></summary>
+
+目前只支持 ClawBot 私聊。群聊支持计划在未来版本中加入。
+</details>
+
+<details>
+<summary><strong>Q: 数据安全吗？</strong></summary>
+
+所有数据存储在你本地电脑上，不经过任何第三方服务器。代码完全开源，~2000 行可以完整审计。
+</details>
+
+---
+
+## Contributing
+
+欢迎 PR！项目结构简单，~2000 行 Python，容易上手。
+
+```bash
+git clone https://github.com/allenhuang0/WeClaude.git
+cd WeClaude
+pip install -r requirements.txt
+ruff check .
+python -m py_compile bridge.py
+```
+
+---
+
+## License
+
+[MIT](LICENSE)
+
+---
+
+<p align="center">
+  <strong>WeClaude</strong> — 把 Claude Code 装进微信
+</p>
