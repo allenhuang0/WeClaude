@@ -288,7 +288,7 @@ def call_agent(
             input=stdin_data,
             capture_output=True,
             text=True,
-            timeout=300,
+            timeout=1800,
             cwd=working_dir,
         )
 
@@ -321,7 +321,7 @@ def call_agent(
                     input=stdin_data,
                     capture_output=True,
                     text=True,
-                    timeout=300,
+                    timeout=1800,
                     cwd=working_dir,
                 )
 
